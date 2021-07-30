@@ -511,8 +511,115 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
 end
 ```
 
+### check Rails & Nuxt.js front page
+
+```
+$ docker-compose up
+
+# access these url
+http://localhost:3000/users/1
+http://localhost:8080/users/1
+
+$ docker-compose down
+$ docker-compose ps
+```
+
 -----
 
 ##### push Github repository
 
 -----
+
+### 5-4. set CRUD function on Nuxt.js
+
+#### ~~front/nuxt.config.js~~
+This code is unnecessary.
+
+```javascript
+modules: [
+  '@nuxtjs/axios',
+  '@nuxtjs/proxy'
+],
+
+...
+axios: {
+  proxy: true
+},
+
+proxy: {
+  '/api/': { 
+    target: 'http://localhost:3000', 
+    pathRewrite: { '^/api/': '/' } 
+  }
+},
+...
+```
+
+#### front/pages/users/new.vue
+
+```
+$ vi front/pages/users/new.vue
+```
+
+```javascript
+<template>
+  <section>
+    <div>
+      <h1>New user</h1>
+      <form @submit.prevent="post">
+        <label for="name">Name: </label>
+        <input id="name" v-model="name" type="text" name="name" />
+        <button type="submit">submit</button>
+      </form>
+    </div>
+  </section>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      name: ''
+    }
+  },
+  methods: {
+    post() {
+      this.$axios.post(
+        '/users',
+        {
+          name: this.name
+        }
+      ).then((res) => {
+        this.$router.push(`${res.data.id}`)
+      })
+    }
+  }
+}
+</script>
+```
+
+#### front/pages/users/_id.vue
+
+```javascript
+<template>
+  <h1>Hello, {{ name }}</h1>
+</template>
+
+<script>
+export default {
+  asyncData({ $axios, params }) {
+    return $axios.$get(`/users/${params.id}`)
+      .then((res) => {
+        return { name: res.name }
+      })
+  }
+}
+</script>
+```
+
+
+This code is unnecessary.
+```
+$ docker-compose run --rm front yarn add @nuxtjs/proxy
+$ docker-compose build front
+```
