@@ -13,7 +13,7 @@ $ cd ../back
 $ touch {Dockerfile,Gemfile,Gemfile.lock}
 ```
 
-### front/Dockerfile
+#### front/Dockerfile
 
 ```dockerfile
 FROM node:14.4.0-alpine
@@ -35,7 +35,7 @@ WORKDIR ${HOME}
 EXPOSE ${CONTAINER_PORT}
 ```
 
-### back/Dockerfile
+#### back/Dockerfile
 
 ```dockerfile
 FROM ruby:2.7.1-alpine
@@ -67,7 +67,7 @@ COPY . .
 CMD ["rails", "server", "-b", "0.0.0.0"]
 ```
 
-### .env
+#### .env
 
 ```
 # commons
@@ -80,13 +80,13 @@ FRONT_PORT=8080
 POSTGRES_PASSWORD=password
 ```
 
-### .gitignore
+#### .gitignore
 
 ```
 /.env
 ```
 
-### docker-compose.yml
+#### docker-compose.yml
 
 ```yml
 version: '3.8'
@@ -147,7 +147,7 @@ Create new Rails App.
 $ docker-compose run --rm back rails new . -f -B -d postgresql --api
 
 # Rebuilding api directory for update Gemfile
-root $ docker-compose build back 
+$ docker-compose build back 
 ```
 
 ### 3-2. set Rails DB
@@ -510,3 +510,9 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
   end
 end
 ```
+
+-----
+
+##### push Github repository
+
+-----
