@@ -15,7 +15,7 @@ $ touch {Dockerfile,Gemfile,Gemfile.lock}
 
 ### front/Dockerfile
 
-```
+```dockerfile
 FROM node:14.4.0-alpine
 
 ARG WORKDIR
@@ -37,7 +37,7 @@ EXPOSE ${CONTAINER_PORT}
 
 ### back/Dockerfile
 
-```
+```dockerfile
 FROM ruby:2.7.1-alpine
 
 ARG WORKDIR
@@ -88,7 +88,7 @@ POSTGRES_PASSWORD=password
 
 ### docker-compose.yml
 
-```
+```yml
 version: '3.8'
 
 services:
@@ -218,7 +218,9 @@ postgres=# \q
 $ docker-compose down
 ```
 
-```yml:back/config/database.yml
+#### back/config/database.yml
+
+```yml
 default: &default
   adapter: postgresql
   encoding: unicode
