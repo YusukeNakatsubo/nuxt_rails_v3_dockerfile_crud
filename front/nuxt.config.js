@@ -24,8 +24,9 @@ export default {
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [
-  ],
+  plugins:[
+    'plugins/axios'
+  ], 
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -36,9 +37,17 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    '@nuxtjs/axios'
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
-  }
+  },
+
+  axios: {
+  // サーバーサイドで行うリクエストに使用されるURL
+  // baseURL: process.env.API_URL
+  // クライアントサイドで行うリクエストに使用されるURL(デフォルト: baseURL)
+  // browserBaseURL: <URL>
+  },
 }

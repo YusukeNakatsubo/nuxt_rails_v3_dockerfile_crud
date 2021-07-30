@@ -156,6 +156,8 @@ root $ docker-compose build back
 $ vi back/config/database.yml
 ```
 
+#### back/config/database.yml
+
 ```yml
 default: &default
    adapter: postgresql
@@ -262,7 +264,7 @@ $ mv front/app/{*,.*} front
 $ rm -rf front/app
 ```
 
-### check Nuxt.js app
+### check Nuxt.js App
 
 ```
 # start Nuxt
@@ -288,5 +290,223 @@ Name   Command   State   Ports
 ------------------------------
 ```
 
+-----
+
 ##### push Github repository
 
+-----
+
+## 4. Create MVC on Rails App
+Create User MVC on Rails App. 
+
+```
+$ docker-compose run --rm back rails g scaffold user name:string
+$ docker-compose run --rm back rails db:migrate
+
+# check Rails routes
+$ docker-compose run --rm back rails routes
+
+Prefix Verb   URI Pattern            Controller#Action
+users  GET    /users(.:format)       users#index
+       POST   /users(.:format)       users#create
+user   GET    /users/:id(.:format)   users#show
+       PATCH  /users/:id(.:format)   users#update
+       PUT    /users/:id(.:format)   users#update
+       DELETE /users/:id(.:format)   users#destroy
+```
+
+### create test user
+
+```
+$ docker-compose up -d back
+$ curl -X POST http://localhost:3000/users -d 'user[name]=test'
+$ curl http://localhost:3000/users/1
+
+curl http://localhost:3000/users/1
+{"id":1,"name":"test","created_at":"2021-xx-xxTxx:xx:xx.xxxx","updated_at":"2021-xx-xxTxx:xx:xx.xxxx"}
+
+$ docker-compose down
+$ docker-compose ps
+```
+
+## 5. Rails API x Nuxt.js
+
+### 5-1. set Environment variable
+
+#### front/Dockerfile
+
+```docker
+FROM node:14.4.0-alpine
+
+ARG WORKDIR
+ARG CONTAINER_PORT
+# 追加
+ARG API_URL
+
+ENV HOME=/${WORKDIR} \
+    LANG=C.UTF-8 \
+    TZ=Asia/Tokyo \
+    # \ 追記
+    HOST=0.0.0.0  \
+    # 追加
+    API_URL=${API_URL}
+
+# ENV check
+RUN echo ${HOME}
+RUN echo ${CONTAINER_PORT}
+# 追加
+RUN echo ${API_URL}
+
+WORKDIR ${HOME}
+
+EXPOSE ${CONTAINER_PORT}
+```
+
+#### docker-compose.yml
+
+```yml
+api:
+    build:
+      context: ./back
+      args:
+        WORKDIR: $WORKDIR
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      API_DOMAIN: "localhost:$FRONT_PORT"       # add 
+
+  ...
+
+front:
+    build:
+      context: ./front
+      args:
+        WORKDIR: $WORKDIR
+        CONTAINER_PORT: $CONTAINER_PORT
+        API_URL: "http://localhost:$API_PORT"   # add
+```
+
+```
+# Rebuilding api directory for update Dockerfile 
+$ docker-compose build back 
+```
+
+### 5-2. set axios on Nuxt.js
+
+```
+# install axios
+$ docker-compose run --rm front yarn add @nuxtjs/axios
+$ mkdir front/plugins
+$ vi front/plugins/axios.js
+```
+
+#### front/plugins/axios.js
+
+```javascript
+export default ({ $axios }) => {
+  // Request log
+  $axios.onRequest((config) => {
+    console.log(config)
+  })
+  // Response log
+  $axios.onResponse((config) => {
+    console.log(config)
+  })
+  // Error log
+  $axios.onError((e) => {
+    console.log(e.response)
+  })
+}
+```
+
+#### front/nuxt.config.js
+
+```javascript
+...
+plugins: [
+  'plugins/axios' // add 
+],
+
+modules:[
+  '@nuxtjs/axios' // add
+],
+...
+
+...
+axios: {
+  // サーバーサイドで行うリクエストに使用されるURL
+  // baseURL: process.env.API_URL
+  // クライアントサイドで行うリクエストに使用されるURL(デフォルト: baseURL)
+  // browserBaseURL: <URL>
+},
+```
+
+#### front/pages/users/_id.vue
+
+```
+$ mkdir front/pages/users
+$ touch front/pages/users/_id.vue
+```
+
+```javascript
+<template>
+  <h1>Hello, {{ name }}</h1>
+</template>
+
+<script>
+export default {
+  asyncData({ $axios, params }) {
+    return $axios.$get(`http://localhost:3000/users/${params.id}`)
+      .then((res) => {
+        return { name: res.name }
+      })
+  }
+}
+</script>
+```
+
+### 5-3. set CROS counterplan on Rails
+
+#### docker-compose.yml
+
+```yml
+api:
+    build:
+      context: ./back
+      args:
+        WORKDIR: $WORKDIR
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      API_DOMAIN: "localhost:$FRONT_PORT"       # add
+
+  ...
+
+front:
+    build:
+      context: ./front
+      args:
+        WORKDIR: $WORKDIR
+        CONTAINER_PORT: $CONTAINER_PORT
+        API_URL: "http://localhost:$API_PORT"   # add
+```
+
+```
+# Rebuilding api directory for update Gemfile
+$ docker-compose build back
+
+# check
+$ docker-compose run --rm back bundle info rack-cors
+```
+
+#### back/config/initializers/cors.rb
+
+```ruby
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    origins ENV["API_DOMAIN"] || ""
+
+    resource '*',
+      headers: :any,
+      methods: [:get, :post, :put, :patch, :delete, :options, :head]
+  end
+end
+```
